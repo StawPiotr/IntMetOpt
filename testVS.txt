@@ -1,0 +1,6 @@
+test
+napisu
+i
+odczytu
+plików
+2

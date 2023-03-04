@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -139,7 +139,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="IntMetOpt.cpp" />
+    <ClCompile Include="IntMetOpt.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">headres</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\Desktop\paczki memów\temp\license.txt" />
+    <Text Include="kroa100.txt" />
+    <Text Include="krob100.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\..\Downloads\kroA100.xml" />
+    <Xml Include="..\..\..\Downloads\kroB100.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Desktop\paczki memów\temp\manual.html" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
