@@ -126,6 +126,25 @@ float totalDistance(vector<point> points) {
     return total_distance;
 }
 
+float totalDistanceFromDistanceList(vector<point> points) {
+    float total_distance = 0;
+    for (int i = 0; i < points.size() - 1; i++) {
+        total_distance += points[i].distances[points[i + 1].index];
+    }
+    return total_distance;
+}
+
+float getSumOfCyclesDistances(vector<vector<point>> cycles, int n_cycles) {
+    float dist_sum = 0;
+    // iterate over cycles and print distances
+    for (int i = 0; i < n_cycles; i++) {
+        float dist = totalDistanceFromDistanceList(cycles[i]);
+        dist_sum += dist;
+        //cout << "CYCLE " << i << " TOTAL DISTANCE: " <<  << endl;
+    }
+    return dist_sum;
+}
+
 point popVertex(vector<point>& available_vertices, int index) {
     point vertex = available_vertices[index];
     available_vertices.erase(available_vertices.begin() + index);
@@ -352,11 +371,54 @@ vector<vector<point>> regratsCycle(vector<point> available_vertices, const int n
     return cycles;
 }
 
+void saveVector(vector<float> vector, string filename) {
+		ofstream file;
+		file.open(filename);
+    for (int i = 0; i < vector.size(); i++) {
+				file << vector[i] << endl;
+		}
+		file.close();
+}
+
+void appendVector(vector<float> vector, string filename) {
+		ofstream file;
+		file.open(filename, ios::app);
+		for (int i = 0; i < vector.size(); i++) {
+				file << vector[i] << endl;
+		}
+		file.close();
+}
+
+void saveCycles(vector<vector<point>> cycles, string filename) {
+		ofstream file;
+		file.open(filename);
+    for (int i = 0; i < cycles.size(); i++) {
+        for (int j = 0; j < cycles[i].size(); j++) {
+						file << cycles[i][j].index << " ";
+				}
+				file << endl;
+		}
+		file.close();
+}
+
+void appendCycles(vector<vector<point>> cycles, string filename) {
+		ofstream file;
+		file.open(filename, ios::app);
+		for (int i = 0; i < cycles.size(); i++) {
+				for (int j = 0; j < cycles[i].size(); j++) {
+						file << cycles[i][j].index << " ";
+				}
+				file << endl;
+		}
+		file.close();
+}
+
 int main()
 {
     const int n_points = 100;
     const int n_cycles = 2;
-    point * points = loadPoints("kroa100.txt", n_points);
+    string instance_filename = "krob100.txt";
+    point * points = loadPoints(instance_filename, n_points);
 
     // add neighbor distances to points
     for (int i = 0; i < n_points; i++) {
@@ -370,19 +432,63 @@ int main()
         }
     }
 
-    // convert points list to vector
-
+    // create 2d vector of distances for each algorithm
+    vector<vector<float>> distances;
+    // add three rows to the vector
+    distances.push_back(vector<float>());
+    distances.push_back(vector<float>());
+    distances.push_back(vector<float>());
     
+    // run 100 experiments
+    for (int j = 0; j < 100; j++) {
 
-    vector<point> points_dynamic(points, points + n_points);
+        cout << "RUN " << j << endl;
 
-    //vector<vector<point>> cycles = greedyNearestNeighbor(points_dynamic, n_cycles, n_points);
+        // convert points list to vector
+        vector<point> points_dynamic1(points, points + n_points);
+        // greedy nearest neighbor algorithm
+        vector<vector<point>> cycles = greedyNearestNeighbor(points_dynamic1, n_cycles, n_points);
+        float current_distance = getSumOfCyclesDistances(cycles, n_cycles);
+        distances[0].push_back(current_distance);
+        
+        string filename = "cycles_" + instance_filename + "_NearestNeighbor_" + ".txt";
+        appendCycles(cycles, filename);
+        // append distances to file
+        filename = "distances_" + instance_filename + "_NearestNeighbor_" + ".txt";
+        appendVector(distances[0], filename);
 
-    vector<vector<point>> cycles = regratsCycle(points_dynamic, n_cycles, n_points);
-
-    printCycles(cycles, n_cycles, n_points);
+        cout << "   Nearest: " << current_distance << endl;
 
 
+        vector<point> points_dynamic2(points, points + n_points);
+        // greedy nearest neighbor algorithm
+        cycles = greedyCycle(points_dynamic2, n_cycles, n_points);
+        current_distance = getSumOfCyclesDistances(cycles, n_cycles);
+        distances[1].push_back(current_distance);
+
+        filename = "cycles_" + instance_filename + "_GreedyCycle_" + ".txt";
+        appendCycles(cycles, filename);
+        // append distances to file
+        filename = "distances_" + instance_filename + "_GreedyCycle_" + ".txt";
+        appendVector(distances[0], filename);
+
+        cout << "   GreedyCycle: " << current_distance << endl;
+
+
+        vector<point> points_dynamic3(points, points + n_points);
+        // greedy nearest neighbor algorithm
+        cycles = regratsCycle(points_dynamic3, n_cycles, n_points);
+        current_distance = getSumOfCyclesDistances(cycles, n_cycles);
+        distances[2].push_back(current_distance);
+
+        filename = "cycles_" + instance_filename + "_RegretCycle_" + ".txt";
+        appendCycles(cycles, filename);
+        // append distances to file
+        filename = "distances_" + instance_filename + "_RegretCycle_" + ".txt";
+        appendVector(distances[0], filename);
+
+        cout << "   RegretCycle: " << current_distance << endl;
+    }
 
     /*for (int j = 0; j < n_points; j++) {
         cout << "NEXT VECTOR "<<j<<"-----------------------------------------------------------------------"<<endl;
