@@ -1,4 +1,4 @@
-﻿#include <iostream>
+﻿   #include <iostream>
 #include <fstream>
 #include <vector>
 #include "Nagłówek.h"
@@ -16,6 +16,69 @@ public:
     float y;
     float distances[100];
     int index;
+    int find_farest() {
+        float max = 0;
+        int max_index = 101;
+        for (int i = 0; i < 100; i++) {
+            if (distances[i] > max) {
+                max = distances[i];
+                max_index = i;
+            }
+        }
+        return max_index;
+    }
+};
+
+class line {
+public:
+    point first_point;
+    point second_point;
+    int find_nearest_point(vector<point> available_vertices) {
+        float distance;
+        int nearest_point = std::numeric_limits<int>::max();
+        float shortest_distance = std::numeric_limits<float>::max();
+        for (int i = 0; i < available_vertices.size(); i++) {
+            point measured_point = available_vertices[i];            
+            distance = first_point.distances[measured_point.index] + second_point.distances[measured_point.index];
+            if (first_point.index != measured_point.index and second_point.index != measured_point.index) {
+                if (distance < shortest_distance) {
+                    shortest_distance = first_point.distances[measured_point.index] + second_point.distances[measured_point.index];
+                    nearest_point = i;
+                }
+            }
+        }
+        return nearest_point;
+    }
+    int find_second_nearest_point(vector<point> available_vertices) {
+        float distance;
+        int nearest_point = std::numeric_limits<int>::max();
+        int second_nearest_point = std::numeric_limits<int>::max();
+        float shortest_distance = std::numeric_limits<float>::max();
+        float second_shortest_distance = std::numeric_limits<float>::max();
+        for (int i = 0; i < available_vertices.size(); i++) {
+            point measured_point = available_vertices[i];
+            distance = first_point.distances[measured_point.index] + second_point.distances[measured_point.index];
+            if (first_point.index != measured_point.index and second_point.index != measured_point.index) {
+                if (distance < shortest_distance) {
+                    shortest_distance = first_point.distances[measured_point.index] + second_point.distances[measured_point.index];
+                    nearest_point = i;
+                }
+                else if(distance < second_shortest_distance){
+                    second_shortest_distance = first_point.distances[measured_point.index] + second_point.distances[measured_point.index];
+                    second_nearest_point = i;
+                }
+            }
+        }
+        return second_nearest_point;
+    }
+    float shortest_distance(point best_point) {
+        return first_point.distances[best_point.index] + second_point.distances[best_point.index];
+    }
+    line(point fp, point sp) {
+        first_point = fp;
+        second_point = sp;
+    }
+    line(){}
 };
 
 point * loadPoints(string filename, const int n_points) {
@@ -80,6 +143,53 @@ void printCycles(vector<vector<point>> cycles, const int n_cycles, const int n_p
     }
 }
 
+void findNearestPoint(vector<vector<point>>& cycles, const int n_cycles, vector<point>& available_vertices) {
+    for (int i = 0; i < n_cycles; i++) {
+        int best_index, best_j;
+        float best_distance = std::numeric_limits<float>::max();
+        for (int j = 0; j < available_vertices.size(); j++) {
+            point measured_point = available_vertices[j];
+
+            // use of index parameter to avoid using wrong 
+            // j index after popping available_vertices
+            float distance = cycles[i].back().distances[measured_point.index];
+            // alternatively use distance calculation
+            //float distance = totalDistance({ cycles[i].back(),  measured_point });
+
+            if (distance != 0 && distance < best_distance) {
+                best_distance = distance;
+                best_index = measured_point.index;
+                best_j = j;
+            }
+        }
+        point vertex = popVertex(available_vertices, best_j);
+        cycles[i].push_back(vertex);
+    }
+}
+
+void add_point_to_cycle(vector<vector<point>>& cycles, vector<point>& available_vertices, vector<vector<line>>& allLines, int i, int best_line, int best_point) {
+    line new_line(allLines[i][best_line].first_point, available_vertices[best_point]);
+    line new_line2(available_vertices[best_point], allLines[i][best_line].second_point);
+    available_vertices.erase(available_vertices.begin() + best_point);
+    allLines[i].erase(allLines[i].begin() + best_line);
+    allLines[i].insert(allLines[i].begin() + best_line, new_line);
+    allLines[i].insert(allLines[i].begin() + best_line+1, new_line2);
+}
+
+void createCycles(vector<vector<point>>& cycles, vector<vector<line>>& allLines, const int n_cycles, const int n_points)
+{
+    for (int j = 0; j < n_cycles; j++) {
+        cycles[j].clear();
+        cycles[j].push_back(allLines[j][0].first_point);
+        for (int i = 0; i < allLines[j].size(); i++) {
+            cycles[j].push_back(allLines[j][i].second_point);
+        }
+    }
+
+}
+
+
+
 vector<vector<point>> greedyNearestNeighbor(vector<point> available_vertices, const int n_cycles, const int n_points) {
     vector<vector<point>> cycles;
     float best_distance = 0;
@@ -122,6 +232,126 @@ vector<vector<point>> greedyNearestNeighbor(vector<point> available_vertices, co
     return cycles;
 }
 
+vector<vector<point>> greedyCycle(vector<point> available_vertices, const int n_cycles, const int n_points) {
+    vector<vector<point>> cycles;
+    vector<vector<line>> allLines;
+
+    srand(time(NULL));
+    int random_index = rand() % available_vertices.size();
+    int random_index2 = rand() % available_vertices.size();
+    point vertex = popVertex(available_vertices, random_index);
+    vector<point> cycle = { vertex };
+    cycles.push_back(cycle);
+
+    point vertex2 = popVertex(available_vertices, random_index2);
+    vector<point> cycle2 = { vertex2 };
+    cycles.push_back(cycle2);
+
+    findNearestPoint(cycles, n_cycles, available_vertices);
+
+    line l1(cycles[0][0], cycles[0][1]);
+    vector<line> lineCycle = { l1 };
+    allLines.push_back(lineCycle);
+
+    line l2(cycles[1][0], cycles[1][1]);
+    vector<line> lineCycle2 = { l2 };
+    allLines.push_back(lineCycle2);
+
+    for (int i = 0; i < n_cycles; i++) {
+        int point = allLines[i][0].find_nearest_point(available_vertices);
+        line new_line(available_vertices[point], allLines[i][0].first_point);
+        line new_line2(allLines[i][0].second_point, available_vertices[point]);
+        available_vertices.erase(available_vertices.begin() + point);
+        allLines[i].insert(allLines[i].begin(), new_line);
+        allLines[i].push_back(new_line2);
+    }
+    
+
+    while (available_vertices.size() > 0) {
+        for (int i = 0; i < n_cycles; i++) {
+            int best_line = 0;
+            int mes_point = 0;
+            int best_point = 0;
+            float best_distance = std::numeric_limits<float>::max();
+            for (int j = 0; j < allLines[i].size(); j++) {
+                mes_point = allLines[i][j].find_nearest_point(available_vertices);
+                if (allLines[i][j].shortest_distance(available_vertices[best_point]) < best_distance) {
+                    best_distance = allLines[i][j].shortest_distance(available_vertices[best_point]);
+                    best_point = mes_point;
+                    best_line = j;
+                }
+            }
+            add_point_to_cycle(cycles, available_vertices, allLines, i, best_line, best_point);
+        }
+    }
+    createCycles(cycles, allLines, n_cycles, n_points);
+
+    return cycles;
+}
+
+vector<vector<point>> regratsCycle(vector<point> available_vertices, const int n_cycles, const int n_points) {
+    vector<vector<point>> cycles;
+    vector<vector<line>> allLines;
+
+    srand(time(NULL));
+    int random_index = rand() % available_vertices.size();
+    int random_index2 = rand() % available_vertices.size();
+    point vertex = popVertex(available_vertices, random_index);
+    vector<point> cycle = { vertex };
+    cycles.push_back(cycle);
+
+    point vertex2 = popVertex(available_vertices, random_index2);
+    vector<point> cycle2 = { vertex2 };
+    cycles.push_back(cycle2);
+
+    findNearestPoint(cycles, n_cycles, available_vertices);
+
+    line l1(cycles[0][0], cycles[0][1]);
+    vector<line> lineCycle = { l1 };
+    allLines.push_back(lineCycle);
+
+    line l2(cycles[1][0], cycles[1][1]);
+    vector<line> lineCycle2 = { l2 };
+    allLines.push_back(lineCycle2);
+
+    for (int i = 0; i < n_cycles; i++) {
+        int point = allLines[i][0].find_nearest_point(available_vertices);
+        line new_line(available_vertices[point], allLines[i][0].first_point);
+        line new_line2(allLines[i][0].second_point, available_vertices[point]);
+        available_vertices.erase(available_vertices.begin() + point);
+        allLines[i].insert(allLines[i].begin(), new_line);
+        allLines[i].push_back(new_line2);
+    }
+
+
+    while (available_vertices.size() > 0) {
+        for (int i = 0; i < n_cycles; i++) {
+            int best_line = 0;
+            int best_point = 0;
+            int mes_point = 0;
+            int second_best_point = 0;
+            float regrats = 0;
+            float best_regrats = 0;
+            float best_distance = std::numeric_limits<float>::max();
+            for (int j = 0; j < allLines[i].size(); j++) {
+                mes_point = allLines[i][j].find_nearest_point(available_vertices);
+                second_best_point = allLines[i][j].find_nearest_point(available_vertices);
+                regrats = available_vertices[best_point].distances[available_vertices[second_best_point].index];
+                if (regrats > best_regrats) {
+                    best_distance = allLines[i][j].shortest_distance(available_vertices[best_point]);
+                    best_line = j;
+                    best_point = mes_point;
+
+                }
+            }
+            add_point_to_cycle(cycles, available_vertices, allLines, i, best_line, best_point);
+        }
+    }
+    createCycles(cycles, allLines, n_cycles, n_points);
+
+    return cycles;
+}
+
 int main()
 {
     const int n_points = 100;
@@ -141,11 +371,18 @@ int main()
     }
 
     // convert points list to vector
+
+    
+
     vector<point> points_dynamic(points, points + n_points);
 
-    vector<vector<point>> cycles = greedyNearestNeighbor(points_dynamic, n_cycles, n_points);
+    //vector<vector<point>> cycles = greedyNearestNeighbor(points_dynamic, n_cycles, n_points);
+
+    vector<vector<point>> cycles = regratsCycle(points_dynamic, n_cycles, n_points);
 
     printCycles(cycles, n_cycles, n_points);
+
+
 
     /*for (int j = 0; j < n_points; j++) {
         cout << "NEXT VECTOR "<<j<<"-----------------------------------------------------------------------"<<endl;
