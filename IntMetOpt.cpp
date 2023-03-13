@@ -209,20 +209,28 @@ void createCycles(vector<vector<point>>& cycles, vector<vector<line>>& allLines,
 
 
 
-vector<vector<point>> greedyNearestNeighbor(vector<point> available_vertices, const int n_cycles, const int n_points) {
+vector<vector<point>> greedyNearestNeighbor(vector<point> available_vertices, const int n_cycles, const int n_points, int ind1, int ind2) {
     vector<vector<point>> cycles;
     float best_distance = 0;
 
-    for (int i = 0; i < n_cycles; i++) {
+    //for (int i = 0; i < n_cycles; i++) {
 
-        // randomize starting point index
-        srand(time(NULL));
-        int random_index = rand() % available_vertices.size();
+    //    // randomize starting point index
+    //    srand(time(NULL));
+    //    int random_index = rand() % available_vertices.size();
 
-        point vertex = popVertex(available_vertices, random_index);
-        vector<point> cycle = { vertex };
-        cycles.push_back(cycle);
-    }
+    //    point vertex = popVertex(available_vertices, random_index);
+    //    vector<point> cycle = { vertex };
+    //    cycles.push_back(cycle);
+    //}
+
+    point vertex = popVertex(available_vertices, ind1);
+    vector<point> cycle = { vertex };
+    cycles.push_back(cycle);
+
+    point vertex2 = popVertex(available_vertices, ind2);
+    vector<point> cycle2 = { vertex2 };
+    cycles.push_back(cycle2);
 
     while (available_vertices.size() > 0) {
         for (int i = 0; i < n_cycles; i++) {
@@ -251,13 +259,15 @@ vector<vector<point>> greedyNearestNeighbor(vector<point> available_vertices, co
     return cycles;
 }
 
-vector<vector<point>> greedyCycle(vector<point> available_vertices, const int n_cycles, const int n_points) {
+vector<vector<point>> greedyCycle(vector<point> available_vertices, const int n_cycles, const int n_points, int ind1, int ind2) {
     vector<vector<point>> cycles;
     vector<vector<line>> allLines;
 
     srand(time(NULL));
-    int random_index = rand() % available_vertices.size();
-    int random_index2 = rand() % available_vertices.size();
+    //int random_index = rand() % available_vertices.size();
+    //int random_index2 = rand() % available_vertices.size();
+    int random_index = ind1;
+    int random_index2 = ind2;
     point vertex = popVertex(available_vertices, random_index);
     vector<point> cycle = { vertex };
     cycles.push_back(cycle);
@@ -308,13 +318,15 @@ vector<vector<point>> greedyCycle(vector<point> available_vertices, const int n_
     return cycles;
 }
 
-vector<vector<point>> regratsCycle(vector<point> available_vertices, const int n_cycles, const int n_points) {
+vector<vector<point>> regratsCycle(vector<point> available_vertices, const int n_cycles, const int n_points, int ind1, int ind2) {
     vector<vector<point>> cycles;
     vector<vector<line>> allLines;
 
-    srand(time(NULL));
+    /*srand(time(NULL));
     int random_index = rand() % available_vertices.size();
-    int random_index2 = rand() % available_vertices.size();
+    int random_index2 = rand() % available_vertices.size();*/
+    int random_index = ind1;
+    int random_index2 = ind2;
     point vertex = popVertex(available_vertices, random_index);
     vector<point> cycle = { vertex };
     cycles.push_back(cycle);
@@ -384,8 +396,9 @@ void appendVector(vector<float> vector, string filename) {
 		ofstream file;
 		file.open(filename, ios::app);
 		for (int i = 0; i < vector.size(); i++) {
-				file << vector[i] << endl;
+        file << vector[i];
 		}
+    file << endl;
 		file.close();
 }
 
@@ -419,7 +432,7 @@ int main()
     const int n_cycles = 2;
     string instance_filename = "krob100.txt";
     point * points = loadPoints(instance_filename, n_points);
-
+    
     // add neighbor distances to points
     for (int i = 0; i < n_points; i++) {
         for (int j = 0; j < n_points; j++) {
@@ -443,49 +456,64 @@ int main()
     for (int j = 0; j < 100; j++) {
 
         cout << "RUN " << j << endl;
+        int ind1 = ceil(j/2);
+        int ind2 = ceil(n_points/3) + ceil((j/2));
 
         // convert points list to vector
         vector<point> points_dynamic1(points, points + n_points);
         // greedy nearest neighbor algorithm
-        vector<vector<point>> cycles = greedyNearestNeighbor(points_dynamic1, n_cycles, n_points);
+        vector<vector<point>> cycles = greedyNearestNeighbor(points_dynamic1, n_cycles, n_points, ind1, ind2);
         float current_distance = getSumOfCyclesDistances(cycles, n_cycles);
         distances[0].push_back(current_distance);
         
-        string filename = "cycles_" + instance_filename + "_NearestNeighbor_" + ".txt";
-        appendCycles(cycles, filename);
-        // append distances to file
-        filename = "distances_" + instance_filename + "_NearestNeighbor_" + ".txt";
-        appendVector(distances[0], filename);
-
+        string c_filename = "cycles_" + instance_filename + "_NearestNeighbor_" + ".txt";
+        string d_filename = "distances_" + instance_filename + "_NearestNeighbor_" + ".txt";
+        if (j == 0) {
+						saveCycles(cycles, c_filename);
+            saveVector(distances[0], d_filename);
+				}
+        else {
+						appendCycles(cycles, c_filename);
+            appendVector(distances[0], d_filename);
+				}
+        
         cout << "   Nearest: " << current_distance << endl;
 
 
         vector<point> points_dynamic2(points, points + n_points);
-        // greedy nearest neighbor algorithm
-        cycles = greedyCycle(points_dynamic2, n_cycles, n_points);
+        cycles = greedyCycle(points_dynamic2, n_cycles, n_points, ind1, ind2);
         current_distance = getSumOfCyclesDistances(cycles, n_cycles);
         distances[1].push_back(current_distance);
 
-        filename = "cycles_" + instance_filename + "_GreedyCycle_" + ".txt";
-        appendCycles(cycles, filename);
-        // append distances to file
-        filename = "distances_" + instance_filename + "_GreedyCycle_" + ".txt";
-        appendVector(distances[0], filename);
+        c_filename = "cycles_" + instance_filename + "_GreedyCycle_" + ".txt";
+        d_filename = "distances_" + instance_filename + "_GreedyCycle_" + ".txt";
+        if (j == 0) {
+            saveCycles(cycles, c_filename);
+            saveVector(distances[1], d_filename);
+        }
+        else {
+            appendCycles(cycles, c_filename);
+            appendVector(distances[1], d_filename);
+        }
 
         cout << "   GreedyCycle: " << current_distance << endl;
 
 
         vector<point> points_dynamic3(points, points + n_points);
-        // greedy nearest neighbor algorithm
-        cycles = regratsCycle(points_dynamic3, n_cycles, n_points);
+        cycles = regratsCycle(points_dynamic3, n_cycles, n_points, ind1, ind2);
         current_distance = getSumOfCyclesDistances(cycles, n_cycles);
         distances[2].push_back(current_distance);
 
-        filename = "cycles_" + instance_filename + "_RegretCycle_" + ".txt";
-        appendCycles(cycles, filename);
-        // append distances to file
-        filename = "distances_" + instance_filename + "_RegretCycle_" + ".txt";
-        appendVector(distances[0], filename);
+        c_filename = "cycles_" + instance_filename + "_RegretCycle_" + ".txt";
+        d_filename = "distances_" + instance_filename + "_RegretCycle_" + ".txt";
+        if (j == 0) {
+            saveCycles(cycles, c_filename);
+            saveVector(distances[2], d_filename);
+        }
+        else {
+            appendCycles(cycles, c_filename);
+            appendVector(distances[2], d_filename);
+        }
 
         cout << "   RegretCycle: " << current_distance << endl;
     }
