@@ -396,10 +396,24 @@ void appendVector(vector<float> vector, string filename) {
 		ofstream file;
 		file.open(filename, ios::app);
 		for (int i = 0; i < vector.size(); i++) {
-        file << vector[i];
+        file << vector[i] << endl;
 		}
-    file << endl;
 		file.close();
+}
+
+// save distance to file
+void saveDistance(float distance, string filename) {
+		ofstream file;
+    file.open(filename);
+    file << distance << endl;
+    file.close();
+}
+
+void appendDistance(float distance, string filename) {
+    ofstream file;
+    file.open(filename, ios::app);
+    file << distance << endl;
+    file.close();
 }
 
 void saveCycles(vector<vector<point>> cycles, string filename) {
@@ -430,7 +444,7 @@ int main()
 {
     const int n_points = 100;
     const int n_cycles = 2;
-    string instance_filename = "krob100.txt";
+    string instance_filename = "kroa100.txt";
     point * points = loadPoints(instance_filename, n_points);
     
     // add neighbor distances to points
@@ -451,13 +465,13 @@ int main()
     distances.push_back(vector<float>());
     distances.push_back(vector<float>());
     distances.push_back(vector<float>());
-    
+
     // run 100 experiments
     for (int j = 0; j < 100; j++) {
 
         cout << "RUN " << j << endl;
-        int ind1 = ceil(j/2);
-        int ind2 = ceil(n_points/3) + ceil((j/2));
+        int ind1 = floor(j/2);
+        int ind2 = min(98, j+1);
 
         // convert points list to vector
         vector<point> points_dynamic1(points, points + n_points);
@@ -470,11 +484,11 @@ int main()
         string d_filename = "distances_" + instance_filename + "_NearestNeighbor_" + ".txt";
         if (j == 0) {
 						saveCycles(cycles, c_filename);
-            saveVector(distances[0], d_filename);
+            saveDistance(current_distance, d_filename);
 				}
         else {
 						appendCycles(cycles, c_filename);
-            appendVector(distances[0], d_filename);
+            appendDistance(current_distance, d_filename);
 				}
         
         cout << "   Nearest: " << current_distance << endl;
@@ -489,11 +503,11 @@ int main()
         d_filename = "distances_" + instance_filename + "_GreedyCycle_" + ".txt";
         if (j == 0) {
             saveCycles(cycles, c_filename);
-            saveVector(distances[1], d_filename);
+            saveDistance(current_distance, d_filename);
         }
         else {
             appendCycles(cycles, c_filename);
-            appendVector(distances[1], d_filename);
+            appendDistance(current_distance, d_filename);
         }
 
         cout << "   GreedyCycle: " << current_distance << endl;
@@ -508,15 +522,16 @@ int main()
         d_filename = "distances_" + instance_filename + "_RegretCycle_" + ".txt";
         if (j == 0) {
             saveCycles(cycles, c_filename);
-            saveVector(distances[2], d_filename);
+            saveDistance(current_distance, d_filename);
         }
         else {
             appendCycles(cycles, c_filename);
-            appendVector(distances[2], d_filename);
+            appendDistance(current_distance, d_filename);
         }
 
         cout << "   RegretCycle: " << current_distance << endl;
     }
+
 
     /*for (int j = 0; j < n_points; j++) {
         cout << "NEXT VECTOR "<<j<<"-----------------------------------------------------------------------"<<endl;
